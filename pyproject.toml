@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "image-captioning"
+version = "0.1.0"
+description = "PyTorch image captioning with ResNet50 + LSTM on COCO (Karpathy split)"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "Mohamed Shakshak" }]
+keywords = ["image-captioning", "pytorch", "resnet50", "lstm", "coco"]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "numpy>=1.24",
+    "pillow>=10.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.65",
+    "matplotlib>=3.7",
+    "huggingface-hub>=0.20",
+    "pycocoevalcap>=1.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4",
+    "mypy>=1.8",
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "types-pyyaml",
+]
+app = [
+    "streamlit>=1.30",
+]
+
+[project.urls]
+Repository = "https://github.com/MohamedShakshak/Image-Captioning"
+Space = "https://huggingface.co/spaces/MohamedShakshak/image-captioning-pytorch"
+Model = "https://huggingface.co/MohamedShakshak/image-captioning-pytorch"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "C4", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["N802", "N803"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+strict = true
+ignore_missing_imports = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

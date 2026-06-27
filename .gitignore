@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.whl
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Data & artifacts (root-level only)
+/data/
+/coco/
+/features/
+*.npy
+*.pt
+*.pth
+checkpoints/
+metrics.json
+vocab.json
+curves.png
+
+# Notebooks (keep notebook source, strip outputs)
+.ipynb_checkpoints/
+
+# Kaggle / HF
+kaggle.json
+hf_token.txt
+.env
+
+# OS
+.DS_Store
+Thumbs.db

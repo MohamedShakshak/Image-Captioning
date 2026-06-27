@@ -1,0 +1,20 @@
+# Kaggle + CI fallback — exact-pinned.
+# Use `uv pip install -e .[dev]` for local dev; this file is for offline Kaggle sessions.
+
+torch==2.2.0
+torchvision==0.17.0
+numpy==1.26.4
+pillow==10.2.0
+pyyaml==6.0.1
+tqdm==4.66.2
+matplotlib==3.8.3
+huggingface-hub==0.20.3
+pycocoevalcap==1.2
+streamlit==1.32.0
+
+# dev (for local pytest/lint via pip fallback)
+ruff==0.4.4
+mypy==1.9.0
+pytest==8.0.2
+pytest-cov==4.1.0
+types-pyyaml==6.0.12.12
