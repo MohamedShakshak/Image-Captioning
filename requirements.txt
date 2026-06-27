@@ -1,8 +1,7 @@
-# Kaggle + CI fallback — exact-pinned.
-# Use `uv pip install -e .[dev]` for local dev; this file is for offline Kaggle sessions.
+# Platform-agnostic deps (torch/torchvision are platform-specific — install separately).
+# Local dev: `pip install torch torchvision --index-url https://download.pytorch.org/whl/cuXXX`
+# Kaggle: torch is pre-installed.
 
-torch==2.2.0
-torchvision==0.17.0
 numpy==1.26.4
 pillow==10.2.0
 pyyaml==6.0.1
