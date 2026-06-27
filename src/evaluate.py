@@ -1,6 +1,7 @@
 """Evaluation: per-epoch val-loss (used during training) + final pycocoevalcap.
 
-See PLAN.md § Eval."""
+Uses COCO 2017 val2017 as the evaluation set.
+"""
 
 from __future__ import annotations
 
@@ -8,30 +9,38 @@ import json
 from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader
 
 from config import Config
-from data.dataset import CachedCOCODataset, collate_fn
+from data.dataset import CachedCOCODataset
 from data.vocab import Vocab
 from inference import beam_search
 from models.decoder import Decoder
-from train import load_karpathy_split
+
+
+def _build_ground_truth(annotation_json: str | Path) -> dict[str, list[dict]]:
+    """Build pycocoevalcap-format ground truth: {img_id: [{caption: str}, ...]}"""
+    with open(annotation_json) as f:
+        data = json.load(f)
+
+    gts: dict[int, list[str]] = {}
+    for ann in data["annotations"]:
+        iid = ann["image_id"]
+        if iid not in gts:
+            gts[iid] = []
+        gts[iid].append(ann["caption"])
+
+    result: dict[str, list[dict]] = {}
+    for iid, caps in gts.items():
+        key = f"{iid:012d}"
+        result[key] = [{"caption": c} for c in caps]
+    return result
 
 
 def evaluate(cfg: Config) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     vocab = Vocab.load(cfg.data["vocab_path"])
-    karpathy = load_karpathy_split(cfg.data["karpathy_split"])
 
-    test_ds = CachedCOCODataset(cfg.data["features_dir"], karpathy, vocab, split="test")
-    test_loader = DataLoader(
-        test_ds,
-        batch_size=cfg.eval["batch_size"],
-        shuffle=False,
-        num_workers=cfg.train["num_workers"],
-        pin_memory=cfg.train["pin_memory"],
-        collate_fn=collate_fn,
-    )
+    test_ds = CachedCOCODataset(cfg.data["features_dir"], cfg.data["annotation_val"], vocab)
 
     decoder = Decoder(
         vocab_size=vocab.size,
@@ -43,34 +52,30 @@ def evaluate(cfg: Config) -> None:
     decoder.load_state_dict(ckpt["model"])
     decoder.eval()
 
+    gts = _build_ground_truth(cfg.data["annotation_val"])
     preds: dict[str, list[dict]] = {}
-    gts: dict[str, list[dict]] = {}
-    img_id = 0
+
+    decoder.eval()
     with torch.no_grad():
-        for features, _captions, _l in test_loader:
-            features = features.to(device)
-            for i in range(features.size(0)):
-                feats = features[i]
-                results = beam_search(
-                    decoder,
-                    feats.unsqueeze(0),
-                    beam_size=cfg.eval["beam_size"],
-                    length_norm_alpha=cfg.eval["length_norm_alpha"],
-                )
-                tokens, _score = results[0]
-                text = " ".join(vocab.decode(tokens))
-                preds[f"img_{img_id}"] = [{"caption": text}]
-                # Ground truth from Karpathy
-                entry = test_ds.entries[img_id]
-                gts[f"img_{img_id}"] = [{"caption": s["raw"]} for s in entry["sentences"]]
-                img_id += 1
+        for idx in range(len(test_ds)):
+            img_id, features, _ = test_ds[idx]
+            features = features.to(device).unsqueeze(0)
+            results = beam_search(
+                decoder,
+                features,
+                beam_size=cfg.eval["beam_size"],
+                length_norm_alpha=cfg.eval["length_norm_alpha"],
+            )
+            tokens, _score = results[0]
+            text = " ".join(vocab.decode(tokens))
+            key = f"{img_id:012d}"
+            preds[key] = [{"caption": text}]
 
     out_dir = Path("eval_out")
     out_dir.mkdir(exist_ok=True)
     (out_dir / "preds.json").write_text(json.dumps(preds, indent=2))
     (out_dir / "gts.json").write_text(json.dumps(gts, indent=2))
 
-    # BLEU is pure-python in pycocoevalcap; CIDEr/METEOR/SPICE need Java.
     from pycocoevalcap.bleu.bleu import Bleu
     from pycocoevalcap.rouge.rouge import Rouge
 

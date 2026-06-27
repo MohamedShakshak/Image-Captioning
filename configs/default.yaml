@@ -2,7 +2,8 @@ seed: 42
 
 data:
   coco_root: /kaggle/input/coco-2017
-  karpathy_split: /kaggle/input/coco-karpathy/dataset_coco.json
+  annotation_train: /kaggle/input/coco-2017/annotations/captions_train2017.json
+  annotation_val: /kaggle/input/coco-2017/annotations/captions_val2017.json
   features_dir: /kaggle/input/coco-features
   vocab_path: vocab.json
   image_size: 224
@@ -23,7 +24,7 @@ train:
   grad_clip: 1.0
   num_workers: 2
   pin_memory: true
-  amp: false   # P100 has no tensor cores; LSTM fp16 NaN risk
+  amp: false
 
 optim:
   scheduler: reduce_on_plateau
@@ -34,7 +35,7 @@ eval:
   beam_size: 3
   length_norm_alpha: 0.7
   batch_size: 16
-  full_metrics: false   # set true on Kaggle (Java available)
+  full_metrics: false
 
 checkpoint:
   dir: /kaggle/working/checkpoints

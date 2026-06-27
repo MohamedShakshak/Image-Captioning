@@ -55,7 +55,7 @@ class Vocab:
         return [self.idx2word[i] for i in idxs]
 
     @classmethod
-    def build(cls, captions: list[str], min_freq: int = 5) -> "Vocab":
+    def build(cls, captions: list[str], min_freq: int = 5) -> Vocab:
         counter: Counter[str] = Counter()
         for cap in captions:
             counter.update(tokenize(cap))
@@ -70,7 +70,7 @@ class Vocab:
         Path(path).write_text(json.dumps({"word2idx": self.word2idx}, indent=2))
 
     @classmethod
-    def load(cls, path: str | Path) -> "Vocab":
+    def load(cls, path: str | Path) -> Vocab:
         data = json.loads(Path(path).read_text())
         return cls(data["word2idx"])
 

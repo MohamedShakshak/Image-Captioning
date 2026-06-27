@@ -54,13 +54,6 @@ def masked_ce_loss(
     return loss
 
 
-def load_karpathy_split(path: str | Path) -> dict:
-    with open(path) as f:
-        import json as _json
-
-        return _json.load(f)
-
-
 def save_checkpoint(
     path: str | Path,
     decoder: Decoder,
@@ -101,10 +94,9 @@ def train(cfg: Config) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     vocab = Vocab.load(cfg.data["vocab_path"])
-    karpathy = load_karpathy_split(cfg.data["karpathy_split"])
 
-    train_ds = CachedCOCODataset(cfg.data["features_dir"], karpathy, vocab, split="train")
-    val_ds = CachedCOCODataset(cfg.data["features_dir"], karpathy, vocab, split="val")
+    train_ds = CachedCOCODataset(cfg.data["features_dir"], cfg.data["annotation_train"], vocab)
+    val_ds = CachedCOCODataset(cfg.data["features_dir"], cfg.data["annotation_val"], vocab)
     train_loader = DataLoader(
         train_ds,
         batch_size=cfg.train["batch_size"],

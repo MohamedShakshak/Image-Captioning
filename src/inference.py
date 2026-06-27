@@ -99,7 +99,7 @@ def beam_search(
         else:
             tokens, score = torch.tensor([START_IDX, END_IDX], device=device), 0.0
         length = max(1, tokens.numel() - 1)
-        norm_score = score / (length ** length_norm_alpha)
+        norm_score = score / (length**length_norm_alpha)
         finished.append((tokens[1:].tolist(), norm_score))
 
     finished.sort(key=lambda x: x[1], reverse=True)
