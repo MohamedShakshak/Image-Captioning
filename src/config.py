@@ -62,6 +62,7 @@ def parse_args() -> tuple[Config, argparse.Namespace]:
     args = p.parse_args()
     cfg = Config.from_yaml(args.config)
     for ov in args.overrides:
+        ov = ov.removeprefix("--")  # accept both key=value and --key=value
         if "=" not in ov:
             raise SystemExit(f"Override must be key=value, got: {ov}")
         key, value = ov.split("=", 1)
