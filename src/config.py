@@ -66,5 +66,6 @@ def parse_args() -> tuple[Config, argparse.Namespace]:
         if "=" not in ov:
             raise SystemExit(f"Override must be key=value, got: {ov}")
         key, value = ov.split("=", 1)
+        key = key.replace("-", "_")  # normalize dashes to underscores (argparse convention)
         cfg.override(key, value)
     return cfg, args
