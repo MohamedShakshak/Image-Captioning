@@ -1,8 +1,8 @@
 # Image Captioning (PyTorch)
 
-PyTorch port of an image captioning model with a **ResNet50 encoder + LSTM decoder**, trained on **COCO (Karpathy split)**, evaluated with the full `pycocoevalcap` suite, and deployed as a **Streamlit demo on HuggingFace Spaces**.
+PyTorch port of an image captioning model with a **ResNet50 encoder + LSTM decoder**, trained on **COCO 2017**, evaluated with `pycocoevalcap`, and deployed as a **Streamlit demo on HuggingFace Spaces**.
 
-> Vanilla LSTM v1 — attention is a documented v2 milestone (see [Design decisions](#design-decisions)).
+> Vanilla LSTM v1 — attention is a documented v2 milestone.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/MohamedShakshak/Image-Captioning/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
@@ -21,7 +21,7 @@ A Streamlit app is hosted on HuggingFace Spaces — upload an image, get the top
 ```mermaid
 flowchart LR
     img[Image] --> enc[ResNet50<br/>frozen encoder]
-    enc -->|2048-d pooled vector| cache[(cached .npy<br/>fp16, 1GB)]
+    enc -->|2048-d pooled vector| cache[(cached .npy<br/>fp16, ~1GB)]
     cache --> h0[h0 = tanh W_h feat]
     cache --> c0[c0 = tanh W_c feat]
     h0 --> dec[LSTM decoder<br/>hidden=512, dropout=0.5]
@@ -31,92 +31,59 @@ flowchart LR
     beam --> cap[Top caption + beams]
 ```
 
-## Results
+## Results (COCO 2017 val2017)
 
-Trained on COCO Karpathy train (~113k images), evaluated on Karpathy test (~5k images) with `pycocoevalcap`:
+| Metric | Score |
+|--------|------:|
+| BLEU-1 | _TBD_ |
+| BLEU-2 | _TBD_ |
+| BLEU-3 | _TBD_ |
+| BLEU-4 | _TBD_ |
+| CIDEr  | _TBD_ |
+| ROUGE-L| _TBD_ |
+| METEOR | _TBD_ |
 
-| Metric | Keras v0 (old) | PyTorch v1 |
-|--------|---------------:|-----------:|
-| BLEU-1 | _TBD_          | _TBD_      |
-| BLEU-2 | _TBD_          | _TBD_      |
-| BLEU-3 | _TBD_          | _TBD_      |
-| BLEU-4 | _TBD_          | _TBD_      |
-| CIDEr  | _TBD_          | _TBD_      |
-| ROUGE-L| _TBD_          | _TBD_      |
-| METEOR | _TBD_          | _TBD_      |
-
-Training curves and per-epoch metrics are attached to the v1.0.0 GitHub Release.
-
-## Quickstart
+## Quickstart (local)
 
 ```bash
-# Install (local dev)
-uv pip install -e .[dev]
+# Install torch (CPU or CUDA — platform specific)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
-# Or pip fallback (Kaggle / CI)
-pip install -r requirements.txt && pip install -e .
-
-# Quick sanity — download a tiny COCO subset
-python scripts/download_coco.py --split tiny --out data/
-python scripts/build_vocab.py --coco-root data/ --split tiny
-python scripts/cache_features.py --coco-root data/ --out features/
-
-# Train locally (smoke)
-python -m image_captioning.train --config configs/default.yaml \
-    --data.coco-root data/ --data.features-dir features/ \
-    --train.epochs 1
-
-# Evaluate
-python -m image_captioning.evaluate --config configs/default.yaml
-
-# Caption an image
-python -m image_captioning.inference --image path/to/cat.jpg
-
-# Run the Streamlit app
-streamlit run app/streamlit_app.py
+# Install the package + dev deps
+pip install -e .[dev]
 ```
 
 ## Reproducing on Kaggle
 
-See [`notebooks/train_kaggle.ipynb`](notebooks/train_kaggle.ipynb) for the canonical training run. It:
+**Step 1 — Cache features** (one-time, ~1h on P100):
+Open `notebooks/cache_features_kaggle.ipynb` → add `awsaf49/coco-2017-dataset` → run all cells → upload `/kaggle/working/features/` as a Kaggle Dataset.
 
-1. Clones this repo + `pip install -e .`
-2. Mounts the `coco-2017`, `coco-karpathy`, and `coco-features` Kaggle Datasets
-3. Runs `python -m image_captioning.train --resume` (auto-resumes from `latest.pt`)
-4. Pushes `best.pt` to HuggingFace Hub on completion
-5. Runs full `pycocoevalcap` eval (BLEU-1..4, CIDEr, ROUGE-L, METEOR)
-
-Full-output version of the notebook is attached to the v1.0.0 release.
+**Step 2 — Train** (`notebooks/train_kaggle.ipynb`):
+Add COCO 2017 + your cached features Dataset + HF Hub token as Kaggle Secret → run all cells. Auto-resumes from `latest.pt`.
 
 ## Project layout
 
 ```
-src/image_captioning/
-├── data/          # dataset, vocab, transforms
+src/
+├── data/          # dataset (COCO 2017), vocab, transforms
 ├── models/        # encoder (ResNet50), decoder (LSTM)
-├── train.py       # hand-rolled training loop w/ checkpoint resume
-├── evaluate.py    # pycocoevalcap on Karpathy test
-├── inference.py   # beam_search + greedy_decode functions
-└── captioner.py   # Captioner class (from_pretrained, .caption())
+├── train.py       # hand-rolled training loop
+├── evaluate.py    # pycocoevalcap BLEU/CIDEr/ROUGE/METEOR
+├── inference.py   # beam_search + greedy_decode
+└── captioner.py   # Captioner.from_pretrained()
 ```
-
-See [`PLAN.md`](PLAN.md) for the full design document.
 
 ## Design decisions
 
-- **Vanilla LSTM v1, attention as v2.** The decoder is a single-layer LSTM with hidden=512, matching Show & Tell. Attention (Bahdanau) is deferred as a documented v2 milestone — the cached encoder features are pooled 2048-d vectors; switching to attention needs re-running `cache_features.py` with the spatial mode, a one-time ~1h P100 pass.
-- **Cached encoder features, fp16 `.npy`.** ResNet50's forward pass dominates per-epoch time. Caching pooled `2048-d` vectors (~1GB on disk) to a Kaggle Dataset drops per-epoch time from ~3h to ~20min — a ~5x speedup. This is what makes full COCO trainable in a week on Kaggle's 30h/week budget.
-- **Karpathy split.** Standard 113k/5k/5k train/val/test split. Means our numbers are directly comparable to literature (Show & Tell, Up-Down, etc.) rather than COCO's arbitrary `train2017/val2017`.
-- **Augmentation disabled in v1.** The cache-features strategy means augmented features would have to be re-encoded every epoch, defeating the speedup. Image preprocessing at training uses the deterministic `Resize(256) → CenterCrop(224)` pipeline. Augmentation is a small BLEU tradeoff; the v2 milestone can revisit.
-- **Hand-rolled training loop.** No PyTorch Lightning, no HF Trainer. The loop is ~120 lines, fully transparent, and shows engineering understanding at a glance. Mixed precision is off (P100 has no tensor cores; fp16 + LSTM is NaN-prone).
-- **Sub-word deferred.** Custom word-level vocab with `min_freq=5` (~10k words). Behaves identically to the Karpathy/Show & Tell baseline. HuggingFace subword tokenizers would be overhead for a 10k closed vocab and complicate the BLEU evaluation flow.
+- **COCO 2017 annotations directly** (not Karpathy split). Simpler setup, no COCO 2014/2017 path mismatch. Numbers on the validation set.
+- **Cached encoder features.** Running frozen ResNet50 once and caching 2048-d fp16 vectors drops epoch time from ~3h to ~20min.
+- **torch is optional.** Kaggle pre-installs it; `pyproject.toml` lists torch under `[project.optional-dependencies] torch`. Local install via `pip install torch`.
+- **Augmentation disabled in v1.** Cached feature strategy makes per-epoch augmentation impossible without re-encoding.
+- **Hand-rolled training loop.** No Lightning, no HF Trainer. Fully transparent.
 
 ## Citing
-
 - **Show, Attend and Tell** — Xu et al., 2015.
-- **Deep Visual-Semantic Alignments (Karpathy split)** — Karpathy & Fei-Fei, 2015.
 - **Microsoft COCO** — Lin et al., 2014.
 
 ## License
-
 [MIT](LICENSE)
