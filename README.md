@@ -35,12 +35,12 @@ flowchart LR
 
 | Metric | Score |
 |--------|------:|
-| BLEU-1 | _TBD_ |
-| BLEU-2 | _TBD_ |
-| BLEU-3 | _TBD_ |
-| BLEU-4 | _TBD_ |
-| CIDEr  | _TBD_ |
-| ROUGE-L| _TBD_ |
+| BLEU-1 | 0.5916 |
+| BLEU-2 | 0.4077 |
+| BLEU-3 | 0.2842 |
+| BLEU-4 | **0.2034** |
+| CIDEr  | **0.6035** |
+| ROUGE-L| 0.4048 |
 | METEOR | _TBD_ |
 
 ## Quickstart (local)

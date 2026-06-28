@@ -3,13 +3,24 @@
 ## Goal
 Portfolio/CV project. Clean, runnable PyTorch image captioner: ResNet50 encoder + LSTM decoder. Trained on COCO 2017 via Kaggle P100. Deployed as Streamlit demo on HF Spaces.
 
+## Results (COCO 2017 val2017)
+| Metric | Score |
+|--------|------:|
+| BLEU-1 | 0.5916 |
+| BLEU-2 | 0.4077 |
+| BLEU-3 | 0.2842 |
+| BLEU-4 | 0.2034 |
+| CIDEr  | 0.6035 |
+| ROUGE-L| 0.4048 |
+| METEOR | _TBD_ |
+
 ## Architecture
 
 ### Encoder
 `torchvision.models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)`, frozen, FC stripped, outputs pooled 2048-d vector. Cached to disk as fp16 `.npy` files (12-digit numeric IDs matching COCO 2017).
 
 ### Decoder
-`nn.Linear(2048->512)×2` for `h0`/`c0` init projections (`tanh`), `nn.Embedding(vocab_size, 512)`, `nn.LSTM(512,512,num_layers=1,dropout=0.5)`, `nn.Linear(512, vocab_size)`. Inputs: `<start>+tokens+<end>`. Loss offset-aligned (don't predict `<start>`). Init coupling: `h0=tanh(init_h(features))`, `c0=tanh(init_c(features))`.
+`nn.Linear(2048->512)×2` for `h0`/`c0` init projections (`tanh`), `nn.Embedding(vocab_size, 512)`, `nn.LSTM(512,512,num_layers=1,dropout=0.0)`, `nn.Linear(512, vocab_size)`. Inputs: `<start>+tokens+<end>`. Loss offset-aligned (don't predict `<start>`). Init coupling: `h0=tanh(init_h(features))`, `c0=tanh(init_c(features))`.
 
 ### Vocabulary
 Custom vocab (`scripts/build_vocab.py`), saves `vocab.json`. `min_freq=5`, specials: `<pad>=0, <start>=1, <end>=2, <unk>=3`. ~10k words. Preprocessing: lowercase, strip punctuation, PTB-style contraction split. `<start>`/`<end>` injected at `collate_fn` time. `ignore_index=0` in loss. Inference masks `<unk>`/`<pad>` to `-inf`.
