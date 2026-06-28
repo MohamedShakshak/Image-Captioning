@@ -141,7 +141,7 @@ def train(cfg: Config) -> None:
         print(f"Resumed from epoch {start_epoch}, best_val_loss={best_val_loss:.4f}")
 
     metrics_log: list[dict] = []
-    metrics_path = Path("metrics.json")
+    metrics_path = Path(cfg.checkpoint["dir"]) / "metrics.json"
     if metrics_path.exists():
         metrics_log = json.loads(metrics_path.read_text())
 
