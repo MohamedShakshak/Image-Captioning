@@ -17,8 +17,8 @@ from inference import beam_search
 from models.decoder import Decoder
 
 
-def _build_ground_truth(annotation_json: str | Path) -> dict[str, list[dict]]:
-    """Build pycocoevalcap-format ground truth: {img_id: [{caption: str}, ...]}"""
+def _build_ground_truth(annotation_json: str | Path) -> dict[str, list[str]]:
+    """Build pycocoevalcap-format ground truth: {img_id: [caption_str, ...]}"""
     with open(annotation_json) as f:
         data = json.load(f)
 
@@ -29,10 +29,10 @@ def _build_ground_truth(annotation_json: str | Path) -> dict[str, list[dict]]:
             gts[iid] = []
         gts[iid].append(ann["caption"])
 
-    result: dict[str, list[dict]] = {}
+    result: dict[str, list[str]] = {}
     for iid, caps in gts.items():
         key = f"{iid:012d}"
-        result[key] = [{"caption": c} for c in caps]
+        result[key] = caps
     return result
 
 
@@ -53,7 +53,7 @@ def evaluate(cfg: Config) -> None:
     decoder.eval()
 
     gts = _build_ground_truth(cfg.data["annotation_val"])
-    preds: dict[str, list[dict]] = {}
+    preds: dict[str, list[str]] = {}
 
     decoder.eval()
     with torch.no_grad():
@@ -69,7 +69,7 @@ def evaluate(cfg: Config) -> None:
             tokens, _score = results[0]
             text = " ".join(vocab.decode(tokens))
             key = f"{img_id:012d}"
-            preds[key] = [{"caption": text}]
+            preds[key] = [text]
 
     out_dir = Path("eval_out")
     out_dir.mkdir(exist_ok=True)
