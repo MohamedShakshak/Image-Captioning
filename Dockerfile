@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir \
     streamlit>=1.30 \
     pillow>=10.0 \
     numpy>=1.24 \
-    huggingface-hub>=0.20,<0.24
+    "huggingface-hub>=0.20,<0.24"
 
 ENV HF_REPO=MohamedShakshak/image-captioning-pytorch
 
