@@ -24,7 +24,7 @@ class Decoder(nn.Module):
         super().__init__()
         self.embed = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
         self.lstm = nn.LSTM(
-            embedding_dim, hidden_dim, num_layers=1, batch_first=True, dropout=dropout
+            embedding_dim, hidden_dim, num_layers=1, batch_first=True, dropout=0.0
         )
         self.head = nn.Linear(hidden_dim, vocab_size)
         self.init_h = nn.Linear(2048, hidden_dim)

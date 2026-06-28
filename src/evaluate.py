@@ -96,9 +96,12 @@ def evaluate(cfg: Config) -> None:
         cider = Cider()
         c_score, _ = cider.compute_score(gts, preds)
         print(f"CIDEr: {c_score:.4f}")
-        meteor = Meteor()
-        m_score, _ = meteor.compute_score(gts, preds)
-        print(f"METEOR: {m_score:.4f}")
+        try:
+            meteor = Meteor()
+            m_score, _ = meteor.compute_score(gts, preds)
+            print(f"METEOR: {m_score:.4f}")
+        except Exception as e:
+            print(f"METEOR skipped (Java subprocess issue): {e}")
     else:
         print("(full_metrics=false — CIDEr/METEOR skipped; run on Kaggle for full suite)")
 
